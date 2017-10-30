@@ -1,0 +1,232 @@
+\def\hs{\hspace{0.4 cm}}
+
+\documentclass{beamer}
+
+\usetheme{Berlin}
+\usecolortheme{wolverine}
+\setbeamertemplate{footline}[page number]
+\usefonttheme{structureitalicserif}
+\beamertemplatenavigationsymbolsempty
+\setbeamertemplate{footline}{ }
+
+\title{Scriptless Scripts}
+\author{Andrew Poelstra}
+\institute{\texttt{grindelwald@wpsoftware.net}}
+\date{May 10, 2017}
+
+\usepackage{amsfonts,amsmath,latexsym,color,epsfig,graphicx,multirow,rotating}
+
+\begin{document}
+\frame{ \maketitle }
+
+\section{Scriptless Scripts}  %% unclear what effect this has, but is needed for the subsections to show up 
+
+\subsection{Introduction}
+\frame
+{
+  \frametitle{``Scriptless Scripts''?}
+  \begin{itemize}
+  \item Scriptless scripts: magicking digital signatures so that they can only
+        be created by faithful execution of a smart contract.\\~\\
+  \item Limited in power, but not nearly as much as you might expect.\\~\\
+  \item Mimblewimble is a blockchain design that supports only scriptless scripts,
+        and derives its privacy and scaling properties from this.
+  \end{itemize}
+}
+
+\frame
+{
+  \frametitle{Why use Scriptless Scripts?}
+  \begin{itemize}
+  \item Bitcoin (and Ethereum, etc.) uses a scripting language to describe smart
+        contracts and enforce their execution.\\~\\
+  \item These scripts must be downloaded, parsed, validated by all full nodes on
+        the network. Can't be compressed or aggregated.\\~\\
+  \item The details of the script are visible forever, compromising privacy and
+        fungibility.\\~\\
+  \item With scriptless scripts, the only visible things are public keys (i.e.
+        uniformly random curvepoints) and digital signatures.\\~\\
+  \end{itemize}
+}
+
+\frame
+{
+  \frametitle{Schnorr Signatures Support Scriptless Scripts}
+  \begin{itemize}
+  \item Schnorr signatures: signer has a keypair $(x, P)$.\\~\\
+  \item A signature is the public half of an ``ephemeral keypair'' $(k, R)$
+        along with a linear equation in $x$ and $k$. Equation depends on the
+        hash of a message.\\~\\
+  \item Signature can be verified because the key-derivation map $x\mapsto P$
+        is also linear.\\~\\
+  \item ECDSA signatures (used in Bitcoin) have the same basic shape but aren't
+linear in $x$ and $k$, so they are less useful.
+  \end{itemize}
+}
+
+\subsection{Simple Scriptless Scripts}
+\frame
+{
+  \frametitle{Simplest (Sorta) Scriptless Script}
+  \begin{itemize}
+  \item \texttt{OP\_RETURN} outputs are used in Bitcoin to encode data for purpose
+        of timestamping.\\~\\
+  \item Alternate: replace a public key $P$ with $P + \texttt{Hash}(P\|m)G$.\\~\\
+  \item Replacing the signer's public key is called ``pay to contract'' and is used
+        by Elements and Liquid to move coins onto a sidechain.\\~\\
+  \item Replacing the ephemeral key is called ``sign to contract''. Used to
+        attach a timestamp to an unrelated transaction with zero network
+        overhead.
+  \end{itemize}
+}
+
+\frame
+{
+  \frametitle{Schnorr multi-Signatures are Scriptless Scripts}
+  \begin{itemize}
+  \item By adding Schnorr signature keys, a new key is obtained which can only
+        be signed with with the cooperation of all parties.\\~\\
+  \item Can be generalized to $m$-of-$n$ by all parties giving $m$-of-$n$
+        linear secret shares to all others so they can cooperatively replace
+        missing parties.\\~\\
+  \item (Don't try this at home: some extra precautions are needed to prevent
+        adversarial choice of keys.) 
+  \end{itemize}
+}
+
+\frame
+{
+  \frametitle{moSt exSpressive Scriptless Script}
+  \begin{itemize}
+  \item Zero-Knowledge Contingent payments (Greg Maxwell): sending coins conditioned
+        on the recipient providing the solution to some hard problem.
+  \item Recipient provides a hash $H$ and a zk-proof that the preimage
+        is the encryption key to a valid solution. Sender puts coins in a script
+        that allows claimage by revealing the preimage.
+  \item Use the signature hash $e$ in place of $H$ and now you have a scriptless
+        script ZKCP: a single digital signature which cannot be created without
+        the signer solving some arbitrary (but predetermined) problem for you.
+  \item Alternate: Banasik, Dziembowski and Malinowski (2016/451)
+  \end{itemize}
+}
+
+\subsection{Simultaneous Scriptless Scripts}
+\frame
+{
+  \frametitle{Simultaneous Scriptless Scripts}
+  \begin{itemize}
+  \item Executing separate transactions in an atomic fashion is traditionally
+        done with preimages: if two transactions require the preimage to the
+        same hash, once one is executed, the preimage is exposed so that the
+        other one can be too.\\~\\
+  \item Atomic Swaps (Tier Nolan) and Lightning channels (Poon/Dryja) use this construction.\\~\\
+  \item ``Use the message-hash as the hash'' doesn't work here to scriptless-scriptify
+        this because message hashes can't be fixed before a signature is created. Worse,
+        this would link the two transactions,
+        violating the spirit of scriptless scripts.
+  \end{itemize}
+}
+
+\frame
+{
+  \frametitle{Adaptor Signatures}
+  \begin{itemize}
+  \item Instead use another ephemeral keypair $(t, T)$ and treat $T$ as the
+        ``hash'' of $t$.\\~\\
+  \item When doing a multi-signature replace the old ephemeral key $R$ with $R + T$,
+        and now the signature $s$ must be replaced by $s + t$ to be valid.\\~\\
+  \item Now the original $s$ is an ``adaptor signature''. Anyone with this can
+        compute a valid signature from $t$ or vice-versa. They can verify
+        that it is an adaptor signature for $T$, no trust needed.\\~\\
+  \item One can compute an adaptor signature without knowing $t$, but they
+        will then be unable to produce a real signature.
+  \end{itemize}
+}
+
+\frame
+{
+  \frametitle{Atomic (Cross-chain) Swaps}
+
+  \begin{itemize}
+  \item Parties Alice and Bob send coins on their respective
+        chains to 2-of-2 outputs. Bob thinks of a keypair $(t, T)$ and gives $T$ to
+        Alice.\\~\\
+  \item Before Alice signs to give Bob his coins, she demands adaptor signatures with $T$
+        from him for \emph{both} his signatures: the one taking his coins and the one giving
+        her coins.\\~\\
+  \item Now when Bob signs to take his coins, Alice learns $t$ from one adaptor signature,
+        which she can combine with the other adaptor signature to take \emph{her} coins.
+  \end{itemize}
+}
+
+\frame
+{
+  \frametitle{Basic Lightning}
+
+  \begin{itemize}
+  \item Suppose Alice is paying David through Bob and Carol. She produces an onion-routed
+        path
+        \[ \textnormal{Alice} \to \textnormal{Bob} \to \textnormal{Carol} \to \textnormal{David} \]
+        and asks for public keys $B$, $C$ and $D$ from each participant.\\~\\
+  \item She sends coins to a 2-of-2 between her and Bob. She asks Bob for an adaptor signature
+        with $B + C + D$ before signing to send him the coins.\\~\\
+  \item Similarly Bob sends coins to Carol, first demanding an adaptor signature with $C + D$
+        from her. Carol sends to David, demanding an adaptor signature with $D$.
+  \end{itemize}
+}
+
+\frame
+{
+  \frametitle{Features of Adaptor Signatures}
+  \begin{itemize}
+  \item Adaptor signatures work across blockchains, even if they use different EC groups,
+        though this requires a bit more work.\\~\\
+  \item After a signature hits the chain, anyone can make up a $(t, T)$ and
+        compute a corresponding ``adaptor signature'' for it, so the scheme is deniable.
+        It also does not link the signatures in any way.\\~\\
+  \item Adaptor signatures are re-blindable, as we saw in the Lightning example. This
+        is also deniable and unlinkable.
+  \end{itemize}
+}
+
+\subsection{Conclusion}
+\frame
+{ 
+  \frametitle{Sorceror's Scriptless Script}
+
+  \begin{itemize}
+  \item Mimblewimble is the ultimate scriptless script.\\~\\
+  \item Every input and output has a key, and a transaction signature uses a multisignature
+        of all these keys.\\~\\
+  \item Transaction validity is now contained in a scriptless script; further,
+        the signature has be used with other scriptless script constructions
+        (atomic swaps, ZKCP, etc.) to add additional validity requirements with
+        zero overhead or even visibility to the network.
+  \end{itemize}
+}
+
+\frame
+{
+  \frametitle{Open Problems}
+  \begin{itemize}
+  \item Preserving scriptless scripts in multisig\\~\\
+  \item ECDSA support\\~\\
+  \item Locktimes and other extrospection\\~\\
+  \item Formalizing/understanding limits of scriptless scripts
+  \end{itemize}
+}
+
+\frame
+{
+  \frametitle{~}
+
+  \begin{center}
+  Thank You
+  ~\\~\\
+  Andrew Poelstra \texttt{<grindelwald@wpsoftware.net>}
+  \end{center}
+}
+
+\end{document}
+
+
