@@ -20,19 +20,21 @@ of Alice over a transaction spending the funding transaction without knowing `t`
 
 Protocol description
 ---
-Assume Alice has permanent pubkey `A = a*G` and ephemeral pubkey `A'`, Bob has
-two pubkeys `B1 = b1*G` and `B2 = b2*G` and `H` is a cryptographic hash
-function. The partially blind atomic swap protocol where Alice acts as a
-tumbler and proceeds as follows.
+Assume Alice has a permanent public key `A = a*G`, ephemeral pubkey `A1 = A +
+h*G` and ephemeral pubkey `A2`, Bob has two pubkeys `B1 = b1*G` and `B2 = b2*G`
+and `H` is a cryptographic hash function. Public key aggregation in "2-of-2"
+scripts is achieved with [MuSig](https://eprint.iacr.org/2018/068.pdf) and the
+signature scheme is adapted from
+[Bellare-Neven](https://cseweb.ucsd.edu/~mihir/papers/multisignatures-ccs.pdf).
+The partially blind atomic swap protocol where Alice acts as a tumbler works as
+follows.
 
 1. Setup
 
    * Bob anonymously asks Alice to put coins into a key aggregated output O1
-     with public key `P1 = H(A,B1,A)*A + H(A,B1,B1)*B1` (following "Simpler
-     Schnorr Multi-Signatures with Applications to Bitcoin" by Pieter Wuille,
-     Greg Maxwell and Andrew Poelstra).
-   * Bob puts coins into a key aggregated output O2 with `P2 = H(A',B2,A')*A' +
-     H(A',B2,B2)*B2`. As usual, before sending coins Alice and Bob agree on
+     with public key `P1 = H(A1,B1,A1)*A1 + H(A1,B1,B1)*B1`.
+   * Bob puts coins into a key aggregated output O2 with `P2 = H(A2,B2,A2)*A2 +
+     H(A2,B2,B2)*B2`. As usual, before sending coins Alice and Bob agree on
      timelocked refund transactions in case one party disappears.
 2. Blind signing
 
@@ -48,13 +50,13 @@ tumbler and proceeds as follows.
         * the challenge `c1` as the Bellare-Neven style challenge hash of
           `tx_B` with respect to `P1` and input 0 for aggregated key `P1`: `c1
           = H(P1, 0, R', tx_B)`
-        * the challenge `c'` for `A` as part of `P1`: `c' = c1*H(A,B1,A)`
+        * the challenge `c'` for `A1` as part of `P1`: `c' = c1*H(A1,B1,A1)`
         * the blinded challenge `c = c'+beta`
         * and the blinded signature of A times `G`: `T = R + c*A`
    * Bob sends `c` to Alice
    * Alice replies with an adaptor signature over `tx_A` spending `O2` with
      auxiliary point `T = t*G, t = ka + c*a` where `a` is the discrete
-     logarithm of A.
+     logarithm of permanent key `A`.
 3. Swap
 
     * Bob gives Alice his contribution to the signature over `tx_A`.
@@ -63,13 +65,15 @@ tumbler and proceeds as follows.
     * Due to previously receiving an adaptor signature Bob learns `t` from step (2).
 4. Unblinding
 
-   * Bob unblinds Alice's blind signature `t` as `t' = t+alpha` resulting in a
-     regular signature `(R', t')` of Alice over `tx_B`.
+   * Bob unblinds Alice's blind signature `t` as `t' = t + alpha + c'*h` where
+     c' is the unblinded challenge `h` is the tweak for `A1`. This results in a
+     regular signature `(R', t')` of Alice (`A1`) over `tx_B`.
    * Bob adds his contribution to `t'` completing `(R', s), s = t' + kb +
-     c1*H(A,B1,A)*b1)` which is a valid signature over `tx_B` spending O1:
+     c1*H(A1,B1,B1)*b1` which is a valid signature over `tx_B` spending O1:
      ```
-     s*G = (ka + (c'+beta)*a + alpha + kb + c1*H(A,B1,B1)*b1)*G
-         = R + beta*A + alpha*G + c1*(H(A,B1,A)*a+*H(A,B1,B1)*b1)*G
+     s*G = t' + kb + c1*H(A1,B1,B1) * b1
+         = (ka + (c'+beta)*a + alpha + c'*h + kb + c1*H(A1,B1,B1) * b1)*G
+         = R + beta*A + alpha*G + c1*(H(A1,B1,A1) * (a+h) + H(A1,B1,B1) * b1)*G
          = R' + H(P1, 0, R', tx_B)*P1
      ```
    * Bob waits to increase his anonymity set and then publishes the signature
@@ -99,39 +103,27 @@ Among proposed countermeasures is a simple, but currently unproven trick by
 Andrew Poelstra in which the signer randomly aborts after receiving a
 challenge.
 
-Note that Bob can get a signature of A over anything including arbitrary
-messages. Therefore, the Blockchain this is used in must not allow spending
-more than one output with a single signature. The [SIGHASH_SINGLE
-bug](https://underhandedcrypto.com/2016/08/17/the-2016-backdoored-cryptocurrency-contest-winner/)
-for example would have been disastrous for this scheme.
 
-Dealing with Aggregated Signatures
+A simpler scheme that would be broken by Aggregated Signatures
 ---
-The above scheme is broken by aggregated signatures, because they allow spending
-multiple inputs with a single signature. If Bob creates many funding txs with
-Alice, he can create a tx spending all of them, and prepares a message for Alice
-to sign which is her part of the aggregate signature of all the inputs. Alice
-just dumbly signs any blinded message, so can't decide if it's an aggregated
-sig or not. For example Bob may send Alice a challenge for an aggregate
-signature covering output 1 with pubkeys `L1 = {A, B1}` and output 2 with
-pubkeys `L2 = {A, B2}` as `c'=H(P1, 0, R', tx_B)*H(L1,A) + H(P2, 1, R',
-tx_B)*H(L2,A)`.
+Note that Bob can get a signature of A over anything including arbitrary
+messages. Therefore, Alice must only use fresh ephemeral keys `A1` when
+creating outputs. This complicates the protocol because at the same time Alice
+must not be able to determine for which exact input she signs. As a result,
+It's Bob's job to apply tweak `h` to convert a signature of `A` to `A1`.
 
-A simple solution would be for Alice to create different pubkeys for every swap
-instead of permanent pubkey `A`. Then in step 2 Alice sends one nonce (`Ra`) per
-pubkey to Bob. Bob computes auxiliary points `T` for each of them, including the
-one corresponding to A's pubkey he's really interested in - and requires an
-adapter signature for each `T`.
-* Note that simply sending multiple adaptor sigs is problematic. Say Alice
-  sends one adaptor sig with auxiliary point `T1=t1*G` and one with aux
-  point `T2=t2*G`. Then even without seeing the actual signature, by just
-  subtracting the signatures Bob learns `t1 - t2`. Instead, Alice uses
-  auxiliary points `H(T1)*t1*G and H(T2)*t2*G` revealing `H(T1)t1 - H(T2)t2`
-  which is usually meaningless.
+A simpler protocol where Alice uses `A` instead of `A1` is broken by aggregated
+signatures because it allows spending multiple inputs with a single signature.
+If Bob creates many funding txs with Alice, he can create a tx spending all of
+them, and prepares a message for Alice to sign which is her part of the
+aggregate signature of all the inputs. Alice just dumbly signs any blinded
+message, so can't decide if it's an aggregated sig or not. For example Bob may
+send Alice a challenge for an aggregate signature covering output 1 with
+pubkeys `L1 = {A, B1}` and output 2 with pubkeys `L2 = {A, B2}` as `c'=H(P1, 0,
+R', tx_B)*H(L1,A) + H(P2, 1, R', tx_B)*H(L2,A)`.
 
-The downsides of this approach are increased communication and that Bob doesn't
-know the complete list of Alice's pubkeys, so Alice can only send half of the
-sigs, for example, reducing the anonymity set by 50% with 50% success
-probability. Moreover, Alice can send fake signatures (i.e. signatures not
-belonging to a legitimitate multi party output) such that Bob can not detemine
-his anonymity set.
+Similarly, the [SIGHASH_SINGLE
+bug](https://underhandedcrypto.com/2016/08/17/the-2016-backdoored-cryptocurrency-contest-winner/)
+for example would have been disastrous for this scheme. In general, the
+Blockchain this is used in must not allow spending more than one output with a
+single signature.
