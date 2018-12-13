@@ -83,3 +83,11 @@ that both blockchains support Schnorr signatures.
 6. B adds his contribution to `s`, completing the signature, and publishes it to
    take his coins.
 
+### Compatibility
+
+Adaptor signatures are *not* compatible with non-interactive signature
+aggregation techniques such as [Schnorr
+"half-aggregation"](https://lists.linuxfoundation.org/pipermail/bitcoin-dev/2017-May/014272.html).
+This is because with aggregation the `s`-part in a signature can be
+re-randomized while staying valid, such that knowledge of a corresponding
+adaptor signature does not allow to compute the adaptor secret `t` as `s' - s`.
