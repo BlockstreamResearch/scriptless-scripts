@@ -1,0 +1,41 @@
+@startuml
+title Multi-Hop Locks with Schnorr
+participant Alice
+participant Bob
+participant Carol
+participant Dave
+
+== Setup ==
+
+    Dave->Alice : z*G
+    note left
+        z can be a proof of payment
+    end note
+    Alice->Alice : draw y0, y1, y2 at random
+    note left
+        Alice sets up tuple (L,y,R) for every hop
+    end note
+    Alice->Alice: z*G, y0, (z+y0)*G
+    Alice->Bob  : (z+y0)*G, y1, (z+y0+y1)*G
+    Alice->Carol: (z+y0+y1)*G, y2, (z+y0+y1+y2)*G
+    Alice->Dave : (z+y0+y1+y2)*G, y0+y1+y2, ...
+
+== Update ==
+
+Alice->Bob : add 2-of-2 MuSig(A,B) output with timelocked refund to A
+Bob->Alice : txB, psig(B,txB,(z+y0)*G)
+Alice->Bob : psig(A,txB,(z+y0)*G)
+Bob->Carol : add 2-of-2 MuSig(B,C) output with timelocked refund to B
+Carol->Bob : txC, psig(C,txC,(z+y0+y1)*G)
+Bob->Carol : psig(B,txC,(z+y0+y1)*G)
+Carol->Dave : add 2-of-2 MuSig(C,D) output with timelocked refund to C
+Dave->Carol : txD, psig(D,txD,(z+y0+y1+y2)*G)
+Carol->Dave : psig(C,txD,(z+y0+y1+y2)*G)
+
+== Settlement ==
+
+Dave->Dave : create adaptor_sig(D,txD,z+y0+y1+y2),\nMuSig combine with psig(C,txD,(z+y0+y1+y2)*G),\nbroadcast txD with combined sig
+Carol->Carol : compute z+y0+y1 = adaptor_sig(D,txD,z+y0+y1+y2) - psig(D,txD,(z+y0+y1+y2)*G) - y2\nto create adaptor_sig(C,txC,z+y0+y1),\nMuSig combine with psig(B,txC,(z+y0+y1)*G),\nbroadcast txC with combined sig
+Bob->Bob : compute y0 = adaptor_sig(C,txC,z+y0+y1) - psig(C,txC,(z+y0+y1)*G) - y1\nto create adaptor_sig(B,txB,z+y0),\nMuSig combine with psig(A,txB,z+y0*G),\nbroadcast txB with combined sig
+
+@enduml
