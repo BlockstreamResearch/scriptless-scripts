@@ -62,19 +62,19 @@ s1*T2 + s2*H = k1*T2 + H(R1,R2)*t1*T2 + k2*H + H(R1,R2)*x*H
 Protocol rationale
 ---
 Assume someone wants to buy the opening `(r, x)` of a Pedersen commitment `Q =
-r*G + x*H` from a seller. The seller can't just use `r*G` as the auxiliary
-point in an adaptor signature and send it to the buyer. Upon receiving `r*G`
+r*G + x*H` from a seller. The seller can't just use `r*G` as the adaptor
+point in an adaptorless signature and send it to the buyer. Upon receiving `r*G`
 the buyer would compute `Q - r*G = x*H` and since `x` can belong to a small
 set, the buyer could simply brute-force `x` without paying.
 This is where the multiplication proof for Pedersen commitments comes into
 play: the seller chooses t1 and t2 s.t. `t1*t2 = r`, sends `T1 = t1*G` and
-`T2 = t2*G` as auxiliary points to the buyer along with the multiplication
+`T2 = t2*G` as adaptor points to the buyer along with the multiplication
 proof. Obtaining `r` from `T1` and `T2` is the computational Diffie-Hellman
 problem, but learning `t1` and `t2` during the swap allows the buyer to compute
 `r`.
 
 Because `x` is multiplied by `H` and not `G` there is no straightforward way to
-similarly put `x*H` in an adaptor signature. Let `xi` be the `i`-th bit of `x`.
+similarly put `x*H` in an adaptorless signature. Let `xi` be the `i`-th bit of `x`.
 The seller creates one Pedersen commitment `Qi = ri*G + xi*G` for every bit of
 `x`. After learning all `ri` during the swap, the buyer can reconstruct `x`
 bitwise by checking whether `Qi` is a commitment to `0` or `1`. Committing to
@@ -84,13 +84,19 @@ transactions](https://people.xiph.org/~greg/confidential_values.txt). So we
 can abuse that scheme not to prove ranges, but to prove that each `Qi` commits
 to a bit of `x`.
 
-As a result, the seller must send adaptor signatures for the factors `ti1` and
-`ti2` of each `ri`. Simply sending multiple adaptor signatures is problematic.
-Say the seller sends one adaptor signature with auxiliary point `Ti1=ti1*G` and
-one with auxiliary point `Ti2=ti2*G`. Then even without seeing the actual
-signature, by just subtracting the signatures the buyer learns `ti1 - ti2`.
-Instead, the seller uses auxiliary points `H(Ti1)*ti1*G and H(Ti2)*ti2*G`
-revealing `H(Ti1)ti1 - H(Ti2)ti2` which is meaningless for the buyer.
+As a result, the seller must send adaptorless signatures for the factors `ti1`
+and `ti2` of each `ri`. In general, in order to reveal multiple secret adaptors
+`u1, ..., un` with a single signature the seller must create adaptorless
+signatures `(si, R + sum(uj over j)*G - ui*G, ui*G)`. This ensures that all
+adaptorless signatures commit to the same Schnorr signature nonce `R + sum(uj
+over j)*G`.
+
+However, simply sending multiple adaptorless signatures in that way is problematic.
+Say the seller sends one adaptorless signature with adaptor `Ti1=ti1*G` and one with
+adaptor `Ti2=ti2*G`. Then even without seeing the actual signature, by just
+subtracting the signatures the buyer learns `-ti1 + ti2`. Instead, the seller
+uses adaptor `H(Ti1)*ti1*G and H(Ti2)*ti2*G` revealing `H(Ti1)ti1 - H(Ti2)ti2`
+which is meaningless for the buyer.
 
 
 Protocol description
@@ -116,24 +122,21 @@ r*G + x*H` from a seller.
       challenge `c` for the transaction.
     * For each bit commitment `Qi`, seller generates a uniformly random scalar
       `ti1` and sets `ti2`, such that `ti1*ti2*G = ri*G = Qi-xi*H`. Then the
-      seller computes `Ti1 = ti1*G` and `Ti2 = ti2*G` and sends the following
-      adaptor signatures `si1` and `si2` with auxiliary points `H(Ti1)*Ti1` and
-      `H(Ti2)*Ti2` to Bob:
-      ```
-      si1 = k + H(Ti1)ti1 + c*a
-      si2 = k + H(Ti2)ti2 + c*a
-      ```
-      along with a multiplication proof for Pedersen commitments proving the
-      multiplicative relationship of the blinding factors of Ti1, Ti2 and Qi.
+      seller computes adaptors `Ti1 = ti1*G` and `Ti2 = ti2*G` and sends
+      adaptorless signatures `(si1, R + sum(Ai) - H(Ti1)*Ti1, H(Ti1)*Ti1)` and
+      `(si2, R + sum(Ai) - H(Ti2)*Ti2, H(Ti2)ti2)` where `Ai` is the sum of
+      both adaptors.  The seller also sends a multiplication proof for Pedersen
+      commitments proving the multiplicative relationship of the blinding
+      factors of Ti1, Ti2 and Qi.
 3. Swap
 
-    * The buyer verifies the adaptor signatures and multiplication proofs and
+    * The buyer verifies the adaptorless signatures and multiplication proofs and
       sends his contribution to the signature.
     * The seller completes the signature `(R, s)` and publishes it along with
       the transaction to take her coins.
     * Just as in regular atomic swaps using adaptor signatures, the buyer can
-      recover the discrete logarithm of the auxiliary points by subtracting s
-      from the corresponding adaptor signature. So for each bit commitment, the
+      recover the discrete logarithm of the adaptor by subtracting
+      the adaptorless signature from the corresponding s. So for each bit commitment, the
       buyer is able to recover `ti1` and `ti2`.
     * Because it holds that `ti1*ti2 = ri`, the buyer can reconstruct `x` by
       setting the `i`-th bit of `x` to `0` if `Qi == ti1*ti2*G + 0*H` and to

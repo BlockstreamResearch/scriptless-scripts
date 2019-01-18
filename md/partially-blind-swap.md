@@ -11,8 +11,8 @@ confidential). This property is very similar to
 script](https://github.com/apoelstra/scriptless-scripts/blob/master/md/atomic-swap.md)
 and therefore purely in the elliptic curve discrete logarithm setting.
 
-The basic idea is that the discrete logarithm of the auxiliary point `T` in the
-adaptor signature is not chosen uniformly at random by Alice. Instead, Bob
+The basic idea is that the discrete logarithm of the adaptor point `T` in the
+is not chosen uniformly at random by Alice. Instead, Bob
 computes `T = t*G` where `t` is a [blind Schnorr
 signature](https://blog.cryptographyengineering.com/a-note-on-blind-signature-schemes/)
 of Alice over a transaction spending the funding transaction without knowing `t`
@@ -40,7 +40,7 @@ follows.
      timelocked refund transactions in case one party disappears.
 2. Blind signing
 
-   Bob creates a transaction `tx_B` spending O1. Then Bob creates an auxiliary
+   Bob creates a transaction `tx_B` spending O1. Then Bob creates adaptor
    point `T = t*G` where `t` is a Schnorr signature over `tx_B` in the
    following way:
 
@@ -56,15 +56,15 @@ follows.
         * the blinded challenge `c = c'+beta`
         * and the blinded signature of A times `G`: `T = R + c*A`
    * Bob sends `c` to Alice
-   * Alice replies with an adaptor signature over `tx_A` spending `O2` with
-     auxiliary point `T = t*G, t = ka + c*a` where `a` is the discrete
+   * Alice replies with an adaptorless signature over `tx_A` spending `O2` with
+     adaptor point `T = t*G, t = ka + c*a` where `a` is the discrete
      logarithm of permanent key `A`.
 3. Swap
 
     * Bob gives Alice his contribution to the signature over `tx_A`.
     * Alice adds Bob's contribution to her own signature and uses it to take
       her coins out of O2.
-    * Due to previously receiving an adaptor signature Bob learns `t` from step (2).
+    * Due to previously receiving an adaptorless signature Bob learns `t` from step (2).
 4. Unblinding
 
    * Bob unblinds Alice's blind signature `t` as `t' = t + alpha + c'*h` where
