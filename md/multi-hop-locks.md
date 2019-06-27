@@ -14,7 +14,8 @@ In addition, scriptless script multi-hop locks enable improved proof of payment 
 
 Notation
 ---
-- `psig(i,m,T) := ki + H(R+T,m)*xi` is a partial 2-of-2 MuSig from user `i` for `m` with combined nonce `R` (note that `R` has nothing to do with the right lock `R` defined below and we won't use `R` to mean the nonce again).
+- `nonce(i, m)` is the public nonce of user `i` for a MuSig signature on `m`  (note that we don't call nonces `R` here to avoid confusion with the right lock `R`).
+- `psig(i,m,T) := ki + H(nonce(i,m)+nonce(j,m)+T,m)*xi` is a partial 2-of-2 MuSig from user `i` with user `j` for `m`.
 - `adaptor_sig(i,m,T) := psig(i,m,t*G) + t`
 - `sig(m,T) = psig(i,m,T) + adaptor_sig(j,m,T)` is the completed 2-of-2 MuSig from user i and j. It can be computed from a partial signature and an adaptor signature.
 
@@ -41,7 +42,12 @@ But otherwise scriptless script HTLCs are plain 2-of-2 MuSig outputs and the has
 For demonstration purposes we assume [eltoo](https://blockstream.com/eltoo.pdf)-style channels which means that both parties have symmetric state and there's no need for revocation.
 
 If the payment does not time out, the coins in the scriptless script HTLC output shared by two adjacent hops will be spent by the right hop.
-Therefore, the right hop `j` prepares a transaction `txj` spending the HTLC and partially signs it as `psig(j,txj,Lj)` which is similar to a regular partial signature except that its left lock `Lj` is added to the combined signature nonce.
+Therefore, the left hop `i` creates a transaction `txj` that spends the HTLC and sends to coins to an output that the right hop `j` controls.
+Because the left hop is now aware of the message (i.e. the transaction digest of `txj`) it is going to sign, its public signature nonce can be sent to the right hop.
+Nonce commitments have been exchanged earlier whenever convenient for both nodes such that the nonce commitment roundtrips are not on the critical path of the payment.
+
+Upon receiving notice of the new HTLC and the left hops public nonce, the right hop `j` creates transaction `txj` as well, combines both nonces and partially signs `txj` as `psig(j,txj,Lj)`.
+This is similar to a regular partial signature except that its left lock `Lj` is added to the combined signature nonce.
 The left hop verifies the partial signature and sends its own partial signature for `txj` to the right hop in the following two cases:
 
 - the left hop is the payer
