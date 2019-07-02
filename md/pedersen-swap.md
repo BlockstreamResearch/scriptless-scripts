@@ -26,7 +26,7 @@ Multiplication Proof for Pedersen Commitments
 ---
 This is a non-interactive zero knowledge proof that for given Pedersen
 commitments `Q = r*G + x*H`, `T1 = t1*G` and `T2 = t2*G` it holds that `r =
-t1*t2`. The given construction is special case (commitment to 0) of the proof
+t1*t2`. The given construction is a special case (commitment to 0) of the proof
 from the paper [Zero-knowledge proofs of knowledge for group
 homomorphisms](https://sci-hub.la/10.1007/s10623-015-0103-5) by Ueli Maurer
 section 6.7 with the addition of the Fiat-Shamir heuristic.
@@ -64,9 +64,10 @@ Protocol rationale
 Assume someone wants to buy the opening `(r, x)` of a Pedersen commitment `Q =
 r*G + x*H` from a seller. The seller can't just use `r*G` as the auxiliary
 point in an adaptor signature and send it to the buyer. Upon receiving `r*G`
-the buyer would compute `Q - r*G = x*H` and simply brute-force `x` without
-paying. This is where the multiplication proof for Pedersen commitments comes
-into play: the seller chooses t1 and t2 s.t. `t1*t2 = r`, sends `T1 = t1*G` and
+the buyer would compute `Q - r*G = x*H` and since `x` usually belongs to a
+reasonably small set, the buyer could simply brute-force `x` without paying.
+This is where the multiplication proof for Pedersen commitments comes into
+play: the seller chooses t1 and t2 s.t. `t1*t2 = r`, sends `T1 = t1*G` and
 `T2 = t2*G` as auxiliary points to the buyer along with the multiplication
 proof. Obtaining `r` from `T1` and `T2` is the computational Diffie-Hellman
 problem, but learning `t1` and `t2` during the swap allows the buyer to compute
@@ -83,13 +84,13 @@ transactions](https://people.xiph.org/~greg/confidential_values.txt). So we
 can abuse that scheme not to prove ranges, but to prove that each `Qi` commits
 to a bit of `x`.
 
-As a result, the seller must send an adaptor signatures for the factors `ti1`
-and `ti2` of each `ri`. Simply sending multiple adaptor sigs is problematic.
-Say the seller sends one adaptor sig with auxiliary point `Ti1=ti1*G` and one
-with aux point `Ti2=ti2*G`. Then even without seeing the actual signature, by
-just subtracting the signatures the buyer learns `ti1 - ti2`. Instead, the
-seller uses auxiliary points `H(Ti1)*ti1*G and H(Ti2)*ti2*G` revealing
-`H(Ti1)ti1 - H(Ti2)ti2` which is meaningless for the buyer.
+As a result, the seller must send adaptor signatures for the factors `ti1` and
+`ti2` of each `ri`. Simply sending multiple adaptor signatures is problematic.
+Say the seller sends one adaptor signature with auxiliary point `Ti1=ti1*G` and
+one with auxiliary point `Ti2=ti2*G`. Then even without seeing the actual
+signature, by just subtracting the signatures the buyer learns `ti1 - ti2`.
+Instead, the seller uses auxiliary points `H(Ti1)*ti1*G and H(Ti2)*ti2*G`
+revealing `H(Ti1)ti1 - H(Ti2)ti2` which is meaningless for the buyer.
 
 
 Protocol description
@@ -100,7 +101,7 @@ r*G + x*H` from a seller.
 1. Setup
 
     * The seller publishes a range proof to allow potential buyers to later
-      reconstruct `x` from just `Q` and `r`.A ssuming a prime order group with
+      reconstruct `x` from just `Q` and `r`. Assuming a prime order group with
       an order close to `2^256` the seller publishes `(Q0, ..., Q255, e, s0,
       ..., s255)` where `sum(Qi) = Q` and `e = hash(si*G + hash(si*G +
       e*Qi)*(Qi-2^i*H))`.
@@ -110,7 +111,7 @@ r*G + x*H` from a seller.
 2. Adaptor signatures
 
     * Just as in regular atomic swaps using adaptor signatures, the parties
-      agree on an `R` for the the signature. The seller creates a transaction
+      agree on an `R` for the signature. The seller creates a transaction
       spending the coins from the multisig output and computes a Bellare-Neven
       challenge `c` for the transaction.
     * For each bit commitment `Qi`, seller generates a uniformly random scalar
