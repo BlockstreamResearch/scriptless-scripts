@@ -64,8 +64,8 @@ Protocol rationale
 Assume someone wants to buy the opening `(r, x)` of a Pedersen commitment `Q =
 r*G + x*H` from a seller. The seller can't just use `r*G` as the auxiliary
 point in an adaptor signature and send it to the buyer. Upon receiving `r*G`
-the buyer would compute `Q - r*G = x*H` and since `x` usually belongs to a
-reasonably small set, the buyer could simply brute-force `x` without paying.
+the buyer would compute `Q - r*G = x*H` and since `x` can belong to a small
+set, the buyer could simply brute-force `x` without paying.
 This is where the multiplication proof for Pedersen commitments comes into
 play: the seller chooses t1 and t2 s.t. `t1*t2 = r`, sends `T1 = t1*G` and
 `T2 = t2*G` as auxiliary points to the buyer along with the multiplication
