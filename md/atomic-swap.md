@@ -12,7 +12,7 @@ to B on one chain, while B is sending coins to A on the other.
 
 1. Both parties A and B put their coins into multisignature outputs on each chain
    which require both parties' signatures to be spent.
-2. A gives B auxiallary data "adaptor signatures" which allow A to extract a
+2. A gives B auxiliary data "adaptor signatures" which allow A to extract a
    discrete logarithm from a signature on one chain, and conversely to extract a
    signature from the same discrete logarithm on the other chain.
 3. B then signs to give A her coins on one chain.
