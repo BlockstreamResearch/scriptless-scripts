@@ -21,7 +21,9 @@ of Alice over a transaction spending the funding transaction without knowing `t`
 Protocol description
 ---
 Assume Alice has a permanent public key `A = a*G`, ephemeral pubkey `A1 = A +
-h*G` and ephemeral pubkey `A2`, Bob has two pubkeys `B1 = b1*G` and `B2 = b2*G`
+h*G` where `h` is a tweak that is known to Bob, and ephemeral pubkey `A2` which
+has a secret key known only to Alice and doesn't have to be derived from `A`.
+Bob has two pubkeys `B1 = b1*G` and `B2 = b2*G`
 and `H` is a cryptographic hash function. Public key aggregation in "2-of-2"
 scripts is achieved with [MuSig](https://eprint.iacr.org/2018/068.pdf) and the
 signature scheme is adapted from
