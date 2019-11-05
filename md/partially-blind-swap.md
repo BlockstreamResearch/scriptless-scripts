@@ -20,30 +20,31 @@ of Alice over a transaction spending the funding transaction without knowing `t`
 
 High level description
 ---
-There is a central server (company service provider) that has many utxos, and 
-many users (Alice, Bob, Charlie) with their individual utxos. The two parties
-can swap coins, so that the user knows the coins of the server, but the server
-cannot link the pre to post swap coins of the users, with the anonymity set of
-all users. An outside observer only sees regular public key and signatures and
-no onchain scripts, all is "hidden" within these scriptless scripts public keys
-and signatures, so it is unclear that these transactions are actually a swap.
+There is Alice as a central tumbler server who has many utxos, and many users
+(Bob and Charlie) with their individual utxos. The two parties can swap coins,
+so that the user knows the coins of the tumbler, but the tumbler cannot link
+the pre to post swap coins of the users, with the anonymity set of all users
+between the time of funding and retreaval. An outside observer only sees
+regular public key and signatures and no onchain scripts, all is "hidden"
+within these scriptless scripts public keys and signatures, so it is unclear
+that these transactions are actually a swap.
 
-   * User and server communicate to generate a musig public key with the 
-     individual keys of server and user, and the users asks the server to fund
-     this output O1.
+   * User and tumbler communicate to generate a musig public key with the 
+     individual keys of tumbler and user, and the users asks the tumbler to 
+     fund this output O1.
    * They generates another musig and the user funds this output O2.
    * They pre-sign timelocked refund transactions before funding the musigs, in
      the case either party goes offline.
-   * User has nonce commitment R and public key P of the server coin O1, and 
+   * User has nonce commitment R and public key P of the tumbler coin O1, and 
      with this he can calculates the sum [(blinded spending signature O1) * G],
-     with this he can set up an adaptor signature so that the server needs to
+     with this he can set up an adaptor signature so that the tumbler needs to
      reveal the blinded spending signature (the adaptor secret).
-   * Now the user gives his contribution to spending O2, and the server can
+   * Now the user gives his contribution to spending O2, and the tumbler can
      claim O2 only when providing his full real signature and publishing this
      on-chain which reveals the adaptor secret (the blinded spending signature).
    * The user can now unblinding the adaptor secret spending signature (revealed
-     by server claiming O2) and he can combine this with his own signature to
-     spend O1.
+     by the tumbler claiming O2) and he can combine this with his own signature
+     to spend O1.
 
 Protocol description
 ---
