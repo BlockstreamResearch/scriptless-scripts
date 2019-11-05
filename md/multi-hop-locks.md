@@ -96,6 +96,15 @@ With scriptless script multi-hop locks it is possible to do AMP in a similarly t
 The payer sets up multiple routes to the payee using uncorrelated locks such that any partial payment claimed by the payee reveals the proof of payment (`z`) to the payer.
 Because the payee doesn't want to give up the PoP for just a partial payment, she waits until all routes to her are fully established and claims the all partial payments at once.
 
+It's also possible to set up multiple paths such that the receiver's payment preimage is only revealed once all paths are established, similar to [*base AMP*](https://lists.linuxfoundation.org/pipermail/lightning-dev/2018-February/000993.html) (also known as *low AMP*).
+The difference is that in the multi-hop-locks world we can keep the proof of payment.
+This is referred to as [*high AMP*](https://lists.linuxfoundation.org/pipermail/lightning-dev/2018-November/001494.html).
+
+In high AMP the sender first draws a random number `q` and determines random `q1, ... qn` where `n` is the number of paths such that `q = q1 + ... qn`.
+The sender adds `q*G` to the receiver's payment point on every path, who is therefore unable to claim any payment because the receiver is not aware of `q`.
+However, when setting up each path `i` the sender sent `qi` along to the receiver.
+As soon as all paths are established, the receiver can compute `q` and claim the payments.
+
 Resources
 ---
 
