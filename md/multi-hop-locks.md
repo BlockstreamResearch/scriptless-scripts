@@ -11,14 +11,15 @@ More importantly, they allow [payment decorrelation](https://medium.com/@rusty_l
 Correlation attacks are especially problematic if the first and last intermediate hops are colluding because they would learn source and destination of a payment.
 In addition, scriptless script multi-hop locks enable improved proof of payment and atomic multi path payments (see below).
 
-
 Notation
 ---
-- `nonce(i, m)` is the public nonce of user `i` for a MuSig signature on `m`  (note that we don't call nonces `R` here to avoid confusion with the right lock `R`).
-- `psig(i,m,T) := ki + H(nonce(i,m)+nonce(j,m)+T,m)*xi` is a partial 2-of-2 MuSig from user `i` with user `j` for `m`.
-- `adaptor_sig(i,m,T) := psig(i,m,t*G) + t`
-- `sig(m,T) = psig(i,m,T) + adaptor_sig(j,m,T)` is the completed 2-of-2 MuSig from user i and j. It can be computed from a partial signature and an adaptor signature.
 
+- `Xij := (xi + xj)*G` is the MuSig-combined public key of users `i` and `j`. Note that `xi` and `xj` are MuSig-tweaked secret keys (not the secret keys of users `i` and `j`). See the [MuSig paper](https://eprint.iacr.org/2018/068.pdf) for more details.
+- `nonce(i,m) := ki*G` is the public nonce of user `i` for a MuSig signature on `m` (note that we don't call nonces `R` here to avoid confusion with the right lock `R`).
+- `T := t*G` is an arbitrary tweak applied to the shared nonce.
+- `psig(i,m,T) := ki + H(nonce(i,m)+nonce(j,m)+T,Xij,m)*xi` is a partial 2-of-2 MuSig from user `i` with user `j` for `m`.
+- `adaptor_sig(i,m,T) := psig(i,m,T) + t`
+- `sig(m,T) := psig(i,m,T) + adaptor_sig(j,m,T)` is the completed 2-of-2 MuSig from user `i` and `j` (public key `Xij`). It can be computed from a partial signature and an adaptor signature.
 
 Protocol
 ---
@@ -95,9 +96,10 @@ With scriptless script multi-hop locks it is possible to do AMP in a similarly t
 The payer sets up multiple routes to the payee using uncorrelated locks such that any partial payment claimed by the payee reveals the proof of payment (`z`) to the payer.
 Because the payee doesn't want to give up the PoP for just a partial payment, she waits until all routes to her are fully established and claims the all partial payments at once.
 
-
 Resources
 ---
+
+* [MuSig](https://eprint.iacr.org/2018/068.pdf)
 * [Lightning Network protocol version 1.0](https://github.com/lightningnetwork/lightning-rfc)
 * [Scripless Scripts in Lightning](https://lists.launchpad.net/mimblewimble/msg00086.html)
 * [Privacy-preserving Multi-hop Locks for Blockchain Scalability and Interoperability](https://eprint.iacr.org/2018/472.pdf)
