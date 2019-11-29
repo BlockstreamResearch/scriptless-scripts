@@ -105,7 +105,18 @@ The sender adds `q*G` to the receiver's payment point on every path, who is ther
 However, when setting up each path `i` the sender sent `qi` along to the receiver.
 As soon as all paths are established, the receiver can compute `q` and claim the payments.
 
-Resources
+Batched updates
+---
+In the description of the multi-hop lock flow above we assumed that adding an HTLC output is immediately followed by a signatures from the right hop.
+However, [BOLT #2](https://github.com/lightningnetwork/lightning-rfc/blob/206084c9399abcfacdc95800acc27ebc5ca40b0c/02-peer-protocol.md#normal-operation) specifies that multiple updates (from both sides) can occur before a signature is exchanged.
+MuSig-based multi-hop locks can handle this similarly:
+Each update is accompanied by a public nonce to create a signature of the transaction including the update.
+Either left or right hop can conclude the batching phase by replying to the latest update with their public nonce and a partial signature.
+
+An adversary may not choose the latest update to reply to but instead selects a different `(public nonce, transaction)`-pair from the victim's updates.
+This is not vulnerable to an attack similar to the [late message Wagner's attack](https://medium.com/blockstream/insecure-shortcuts-in-musig-2ad0d38a97da) because the adversary should not be able to trick the victim into signing a transaction with a different nonce.
+Instead, the victim's nonce is tied to a specific transaction which prevents the attacker from choosing a message for signing after seeing the victim's nonce.
+
 ---
 
 * [MuSig](https://eprint.iacr.org/2018/068.pdf)
