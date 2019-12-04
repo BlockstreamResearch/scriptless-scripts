@@ -56,7 +56,7 @@ follows.
         * the blinded challenge `c = c'+beta`
         * and the blinded signature of A times `G`: `T = R + c*A`
    * Bob sends `c` to Alice
-   * Alice replies with an adaptorless signature over `tx_A` spending `O2` with
+   * Alice replies with a partial signature over `tx_A` spending `O2` with
      adaptor point `T = t*G, t = ka + c*a` where `a` is the discrete
      logarithm of permanent key `A`.
 3. Swap
@@ -64,7 +64,7 @@ follows.
     * Bob gives Alice his contribution to the signature over `tx_A`.
     * Alice adds Bob's contribution to her own signature and uses it to take
       her coins out of O2.
-    * Due to previously receiving an adaptorless signature Bob learns `t` from step (2).
+    * Due to previously receiving a partial signature Bob learns `t` from step (2).
 4. Unblinding
 
    * Bob unblinds Alice's blind signature `t` as `t' = t + alpha + c'*h` where

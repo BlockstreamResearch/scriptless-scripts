@@ -12,7 +12,7 @@ to B on one chain, while B is sending coins to A on the other.
 
 1. Both parties A and B put their coins into multisignature outputs on each chain
    which require both parties' signatures to be spent.
-2. A gives B auxiliary data, "adaptorless signatures", for each output. This will allow B to extract a
+2. A gives B a partial signature with auxiliary data for each output. This will allow B to extract a
    discrete logarithm from a signature on one chain, and then to adapt A's
    signature with the same discrete logarithm on the other chain.
 3. B then signs to give A her coins on one chain.
@@ -38,23 +38,24 @@ with public key `P` is a pair `(s, R)` satisfying the equation
 ```
 sG = R + H(P || R || m)P
 ```
-Closely related, an _adaptorless signature_ is a triplet `(s', R, T)` satisfying
+Closely related, a partial signature with _adaptor_ `T`  is a triplet `(s', R, T)` satisfying
 ```
 s'G = R + H(P || R + T || m)P
 ```
 
-It is easy to see that given a Schnorr signature `(s, R + T)` and adaptor signature
-`(s', R, T)` that the discrete logarithm of the _adaptor_ `T`,
+It is easy to see that given a Schnorr signature `(s, R + T)` and partial signature
+`(s', R, T)` that the discrete logarithm of the adaptor `T`,
 can be computed as `s - s'`, since subtracting the above equations reveals
 `(s - s')G = R + T - R = T`.
 
-Similarly, given an adaptorless signature `(s', R, T)` and `t` such that `T = tG`,
+Similarly, given a partial signature `(s', R, T)` and `t` such that `T = tG`,
 it is easy to compute a Schnorr signature `(s, R + T)` by the equation `s = s' + t`.
 
-We conclude that given an adaptorless signature `(s', R, T)` with public key `P`,
+We conclude that given a partial signature `(s', R, T)` with public key `P`,
 knowledge of a Schnorr signature `(s, R + T)` with same `P` is equivalent to
-knowledge of the discrete logarithm of `T`. Schnorr signature `(s, R + T)` is an
-_adaptor signature_ for `(s', R, T)` because it provides the adaptor.
+knowledge of the discrete logarithm of `T`. The Schnorr signature `(s, R + T)` is an
+_adaptor signature_ because it reveals the secret adaptor to anyone
+with partial signature `(s', R, T)`.
 
 #### Schnorr Multisignatures
 
@@ -73,13 +74,13 @@ that both blockchains support Schnorr signatures.
 1. Each party puts their coins into a multisignature output. They agree on a public Schnorr signature nonce
    `R` for each signature that they'll eventually use to move the coins to their
    final destinations.
-2. A chooses a random `t`, sets `T = tG`, and produces adaptorless signatures in place
+2. A chooses a random `t`, sets `T = tG`, and produces a partial signatures in place
    of her contributions to `s`. Each signature uses the same `T`. She sends these
    and `T` to B.
 3. B reveals his contribution to `s` for the signature that sends his coins to A.
-4. A reveals her contribution to `s` for that signature, completing it by adapting previous adaptorless signature, and
+4. A reveals her contribution to `s` for that signature, completing it by adapting the partial signature, and
    publishes it to take her coins.
-5. Using the adaptorless signature, B learns `t` from the output of step (4), and uses
+5. Using the partial signature, B learns `t` from the output of step (4), and uses
    it to adapt A's contribution to `s` for the signature that sends her coins to
    him.
 6. B adds his contribution to `s`, completing the signature, and publishes it to
