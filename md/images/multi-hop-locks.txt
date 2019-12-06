@@ -7,7 +7,7 @@ participant Dave
 
 == Setup ==
 
-    Dave->Alice : z*G
+    Dave->Alice  : z*G
     note left
         z can be a proof of payment
     end note
@@ -15,10 +15,10 @@ participant Dave
     note left
         Alice sets up tuple (L,y,R) for every hop
     end note
-    Alice->Alice: z*G, y0, (z+y0)*G
-    Alice->Bob  : (z+y0)*G, y1, (z+y0+y1)*G
-    Alice->Carol: (z+y0+y1)*G, y2, (z+y0+y1+y2)*G
-    Alice->Dave : (z+y0+y1+y2)*G, y0+y1+y2
+    Alice->Alice : z*G, y0, (z+y0)*G
+    Alice->Bob   : (z+y0)*G, y1, (z+y0+y1)*G
+    Alice->Carol : (z+y0+y1)*G, y2, (z+y0+y1+y2)*G
+    Alice->Dave  : (z+y0+y1+y2)*G, y0+y1+y2
 
 == Update ==
 
@@ -34,8 +34,9 @@ Carol->Dave : psig(C,txD,(z+y0+y1+y2)*G)
 
 == Settlement ==
 
-Dave->Dave : create adaptor_sig(D,txD,(z+y0+y1+y2)*G),\nMuSig combine with psig(C,txD,(z+y0+y1+y2)*G),\nbroadcast txD with combined sig
+Dave->Dave   : create adaptor_sig(D,txD,(z+y0+y1+y2)*G),\nMuSig combine with psig(C,txD,(z+y0+y1+y2)*G),\nbroadcast txD with combined sig
 Carol->Carol : compute z+y0+y1 = adaptor_sig(D,txD,(z+y0+y1+y2)*G) - psig(D,txD,(z+y0+y1+y2)*G) - y2\nto create adaptor_sig(C,txC,(z+y0+y1)*G),\nMuSig combine with psig(B,txC,(z+y0+y1)*G),\nbroadcast txC with combined sig
-Bob->Bob : compute y0 = adaptor_sig(C,txC,(z+y0+y1)*G) - psig(C,txC,(z+y0+y1)*G) - y1\nto create adaptor_sig(B,txB,(z+y0)*G),\nMuSig combine with psig(A,txB,(z+y0)*G),\nbroadcast txB with combined sig
+Bob->Bob     : compute z+y0 = adaptor_sig(C,txC,(z+y0+y1)*G) - psig(C,txC,(z+y0+y1)*G) - y1\nto create adaptor_sig(B,txB,(z+y0)*G),\nMuSig combine with psig(A,txB,(z+y0)*G),\nbroadcast txB with combined sig
+Alice->Alice : compute z = adaptor_sig(B,txB,(z+y0)*G) - psig(B,txB,(z+y0)*G) - y0
 
 @enduml
