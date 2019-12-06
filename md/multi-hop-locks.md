@@ -124,6 +124,42 @@ An adversary may not choose the latest update to reply to but instead selects a 
 This is not vulnerable to an attack similar to the [late message Wagner's attack](https://medium.com/blockstream/insecure-shortcuts-in-musig-2ad0d38a97da) because the adversary should not be able to trick the victim into signing a transaction with a different nonce.
 Instead, the victim's nonce is tied to a specific transaction which prevents the attacker from choosing a message for signing after seeing the victim's nonce.
 
+Cancellable payments
+---
+
+In Lightning v1.0, payments may be stuck for a very long time if an intermediate node goes offline while it was forwarding the payment.
+The payer cannot safely retry, because if the intermediate node goes back online before the HTLC times out, the payer may pay twice.
+
+Example scenario:
+
+1. Alice sends a 10mBTC HTLC to Bob, who should forward to Dave (Alice -> Bob -> Dave).
+2. Bob receives the HTLC but does not forward anything to Dave.
+3. After a few blocks, Alice gets impatient and retries the payment via Carol instead of Bob (Alice -> Carol -> Dave).
+4. This payment succeeds: Alice has correctly paid 10mBTC to Dave and receives a proof-of-payment.
+5. However, Bob wakes up before his HTLC-timeout and forwards the first 10mBTC to Dave.
+6. It's free money for Dave, so Dave accepts it and the HTLC correctly fulfills.
+7. Alice has received her proof-of-payment, but she paid 20mBTC instead of 10mBTC.
+
+This can be avoided if the payment needs a secret from the sender to be fulfilled.
+This solution was originally introduced as [stuckless payments](https://lists.linuxfoundation.org/pipermail/lightning-dev/2019-June/002029.html).
+
+The sender secret is `y0+y1+y2`. Alice MUST NOT send it to Dave during the setup phase.
+Alice does send `(z+y0+y1+y2)*G` to Dave as his left lock, which lets Dave discover `(y0+y1+y2)*G`.
+At the end of the update phase, Dave cannot create the adaptor signature because he is missing `y0+y1+y2`.
+Dave can request `y0+y1+y2` from Alice (and present `(y0+y1+y2)*G` to prove that he received the HTLC).
+When Alice receives that request, she knows that the HTLC was correctly forwarded all the way to Dave.
+She can now safely send `y0+y1+y2` to Dave which allows the settlement phase to begin.
+
+In case Dave does not reply and the payment seems to be stuck, Alice can now retry with another secret `y0'+y1'+y2'` (and potentially another route).
+If this one succeeds, she simply needs to never reveal `y0+y1+y2` and the stuck payment can never be fulfilled.
+Thanks to that mechanism, Alice can safely retry stuck payments without the risk of being double-spent.
+
+Note that this doesn't prevent the payment from being stuck during the settlement phase (if a node goes offline).
+However intermediate nodes have a much bigger incentive to be online and forward during the settlement phase:
+
+- During the update phase they're receiving bitcoins from their left peer: they haven't sent anything yet so their only incentive to forward is the fee they will collect.
+- During the settlement phase they have sent bitcoins to their right peer: they now have an incentive to forward to the left peer to collect the incoming payment.
+
 Resources
 ---
 
@@ -136,3 +172,4 @@ Resources
 * [Post-Schnorr Lightning Txs](https://lists.linuxfoundation.org/pipermail/lightning-dev/2018-February/001038.html)
 * [Bolt11 in the world of Scriptless Scripts](https://lists.linuxfoundation.org/pipermail/lightning-dev/2018-November/001496.html)
 * [Base AMP](https://lists.linuxfoundation.org/pipermail/lightning-dev/2018-November/001577.html)
+* [Stuckless Payments](https://lists.linuxfoundation.org/pipermail/lightning-dev/2019-June/002029.html)
