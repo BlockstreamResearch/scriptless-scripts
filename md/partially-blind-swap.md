@@ -32,7 +32,7 @@ that these transactions are actually a swap.
    * User and tumbler communicate to generate a musig public key with the 
      individual keys of tumbler and user, and the user asks the tumbler to 
      fund this output O1.
-   * They generates another musig and the user funds this output O2.
+   * They generate another musig and the user funds this output O2.
    * They pre-sign timelocked refund transactions before funding the musigs, in
      the case either party goes offline.
    * User has nonce commitment R and public key P of the tumbler coin O1, and 
