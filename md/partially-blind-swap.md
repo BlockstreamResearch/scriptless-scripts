@@ -42,7 +42,7 @@ that these transactions are actually a swap.
    * Now the user gives his contribution to spending O2, and the tumbler can
      claim O2 only when providing his full real signature and publishing this
      on-chain which reveals the adaptor secret (the blinded spending signature).
-   * The user can now unblinding the adaptor secret spending signature (revealed
+   * The user can now unblind the adaptor secret spending signature (revealed
      by the tumbler claiming O2) and he can combine this with his own signature
      to spend O1.
 
