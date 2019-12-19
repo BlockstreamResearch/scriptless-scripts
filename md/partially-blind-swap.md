@@ -24,7 +24,7 @@ There is Alice as a central tumbler server who has many utxos, and many users
 (Bob and Charlie) with their individual utxos. The two parties can swap coins,
 so that the user knows the coins of the tumbler, but the tumbler cannot link
 the pre to post swap coins of the users, with the anonymity set of all users
-between the time of funding and retreaval. An outside observer only sees
+between the time of funding and retrieval. An outside observer only sees
 regular public key and signatures and no onchain scripts, all is "hidden"
 within these scriptless scripts public keys and signatures, so it is unclear
 that these transactions are actually a swap.
