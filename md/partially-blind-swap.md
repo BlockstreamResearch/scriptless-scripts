@@ -36,7 +36,7 @@ that these transactions are actually a swap.
    * They pre-sign timelocked refund transactions before funding the musigs, in
      the case either party goes offline.
    * User has nonce commitment R and public key P of the tumbler coin O1, and 
-     with this he can calculates the sum [(blinded spending signature O1) * G],
+     with this he can calculate the sum [(blinded spending signature O1) * G],
      with this he can set up an adaptor signature so that the tumbler needs to
      reveal the blinded spending signature (the adaptor secret).
    * Now the user gives his contribution to spending O2, and the tumbler can
