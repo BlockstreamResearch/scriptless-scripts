@@ -30,7 +30,7 @@ within these scriptless scripts public keys and signatures, so it is unclear
 that these transactions are actually a swap.
 
    * User and tumbler communicate to generate a musig public key with the 
-     individual keys of tumbler and user, and the users asks the tumbler to 
+     individual keys of tumbler and user, and the user asks the tumbler to 
      fund this output O1.
    * They generates another musig and the user funds this output O2.
    * They pre-sign timelocked refund transactions before funding the musigs, in
