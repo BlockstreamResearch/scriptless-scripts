@@ -2,7 +2,7 @@ Partially Blind Atomic Swap Using Adaptor Signatures
 ===========================
 
 In this scheme one of the participants of the swap does not learn which coins
-are being swapped. For example if service provider engages in a partially blind 
+are being swapped. For example if a service provider engages in a partially blind 
 atomic swap with the users Bob and Carol, the server would not be able to 
 determine if a swapped output belongs to Bob or Carol (assuming the transaction 
 amounts are identical or confidential). This property is very similar to 
