@@ -28,7 +28,7 @@ This is a non-interactive zero knowledge proof that for given Pedersen
 commitments `Q = r*G + x*H`, `T1 = t1*G` and `T2 = t2*G` it holds that `r =
 t1*t2`. The given construction is a special case (commitment to 0) of the proof
 from the paper [Zero-knowledge proofs of knowledge for group
-homomorphisms](https://www.crypto.ethz.ch/teaching/lectures/KP19/papers/Maurer15.pdf)
+homomorphisms](https://www.crypto.ethz.ch/publications/files/Maurer15.pdf)
 by Ueli Maurer section 6.7 with the addition of the Fiat-Shamir heuristic.
 
 Informally, the scheme consists of the two algorithms "generate" and "check":
