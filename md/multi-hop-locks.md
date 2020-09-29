@@ -97,12 +97,13 @@ However, recurring payments from a single sender [can be done using hash chains]
 Atomic Multipath Payments (AMP)
 ---
 
-With scriptless script multi-hop locks it is possible to do AMP in a way similar to [*base AMP*](https://lists.linuxfoundation.org/pipermail/lightning-dev/2018-November/001577.html) while allowing payment decorrelation between the paths.
+With scriptless script multi-hop locks it is possible to make multi-path payments similar to [*base MPP*](https://github.com/lightningnetwork/lightning-rfc/pull/643) while allowing payment decorrelation between the paths.
 The sender sets up multiple routes to the recipient using uncorrelated locks such that any partial payment claimed by the recipient reveals the proof of payment (`z`) to the sender.
 Because the recipient doesn't want to give up the PoP for just a partial payment, she waits until all routes to her are fully established and claims all the partial payments at once.
 
-It's also possible to set up multiple paths such that the recipient's secret (`z`) is only revealed once all paths are established, similar to [*base AMP*](https://lists.linuxfoundation.org/pipermail/lightning-dev/2018-February/000993.html) (also known as *low AMP*).
-The difference is that in the multi-hop-locks world we can keep the proof of payment.
+In the original [original base AMP proposal](https://lists.linuxfoundation.org/pipermail/lightning-dev/2018-February/000993.html) proposal *atomicity* is achieved not only by incentive, but also by setting up the the paths such that the recipient's secret (`z`) is only revealed once all paths are established.
+However, in this proposal the payer is not able to obtain a proof of payment.
+With multi-hop locks we can both have the atomicity of original base AMP and the proof of payment.
 This is referred to as [*high AMP*](https://lists.linuxfoundation.org/pipermail/lightning-dev/2018-November/001494.html).
 
 In high AMP the sender first draws a random number `q` and determines random `q1, ... qn` where `n` is the number of paths such that `q = q1 + ... qn`.
