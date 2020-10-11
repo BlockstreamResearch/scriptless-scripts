@@ -1,6 +1,8 @@
 # Scriptless Scripts
 Scriptless scripts is an approach to designing cryptographic protocol on top of Bitcoin which avoids execution of explicit smart contracts.
 
+**WARNING:** Unless specified otherwise, the presented schemes are ad-hoc constructions and have no formal security model or security proof. They may miss crucial details, are outright insecure or seriously flawed in other ways.
+
 * **[Adaptor Signatures and Atomic Swaps from Scriptless Scripts](md/atomic-swap.md)**
   * This document describes adaptor signatures and multisignatures, which are the original building blocks of scriptless scripts.
     It also describes an atomic swap protocol using these building blocks.
