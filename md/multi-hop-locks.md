@@ -16,10 +16,8 @@ Notation
 
 - `Pij` is the MuSig2 aggregated public key of users `i` and `j`. See the [MuSig2 paper](https://eprint.iacr.org/2020/1261) for more details.
 - `T := t*G` for a randomly chosen `t` is called the adaptor with adaptor secret `t`.
-- `psig(i,m,T)` is a partial 2-of-2 MuSig2 signature from signer `i` for `m` and adaptor `T`. For simplicity the other signer isn't included in the notation; usually it's the node the signer has a channel with and clear from context.
-  This signature is called _partial_ because it needs to be summed with the other party's partial signature in order to become a valid Schnorr signature.
-  Additionally, one may call this a _pre_ partial signature because the adaptor secret `t` needs to be added before this verifies as a regular partial signature.
-- `sig(m,T) := psig(i,m,T) + psig(j,m,T) + t` is the complete Schnorr signature from user `i` and `j`.
+- `psig(i,m,T)` is a pre-signature from signer `i` for `m` and adaptor `T`.
+- `sig(i,m) := psig(i,m,T) + t` is the complete Schnorr signature from user `i`.
 
 Protocol
 ---
