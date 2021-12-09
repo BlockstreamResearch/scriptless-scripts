@@ -2,24 +2,24 @@ Multi-Hop Locks from Scriptless Scripts
 ===========================
 
 Multi-hop locks are protocols that allow two parties to exchange coins and proof of payment without requiring a mutual funding multisig output.
-Instead, they are connected through intermediate hops such that every hop has a shared funding multisig output with the next hop.
-Multi-hop locks based on cryptographic hashes instead of scriptless scripts are used in the [Lightning Network protocol version 1.0](https://github.com/lightningnetwork/lightning-rfc) to route payments.
+Instead, they are connected by hopping through intermediate nodes who are connected by having a shared funding multisig output.
+Multi-hop locks based on cryptographic hashes instead of scriptless scripts are used in the [Lightning Network protocol](https://github.com/lightningnetwork/lightning-rfc) to route payments.
 
 Scriptless script multi-hop locks were introduced in a [post to the mimblewimble mailing list](https://lists.launchpad.net/mimblewimble/msg00086.html) and formally defined in the paper [Privacy-preserving Multi-hop Locks for Blockchain Scalability and Interoperability](https://eprint.iacr.org/2018/472.pdf).
 By using scriptless scripts they result in smaller transactions which look like regular transactions and therefore improve privacy.
-More importantly, they allow [payment decorrelation](https://medium.com/@rusty_lightning/decorrelation-of-lightning-payments-7b6579db96b0) which means that hops in a multi-hop lock can not determine (absent timing and coin amount analysis) if they are on the same path, i.e. they don't know if they are forwarding the same payment.
-Correlation attacks are especially problematic if the first and last intermediate hops are colluding because they would learn source and destination of a payment.
+More importantly, they allow [payment decorrelation](https://medium.com/@rusty_lightning/decorrelation-of-lightning-payments-7b6579db96b0) which means that nodes in a multi-hop lock can not determine (absent timing and coin amount analysis) if they are on the same path, i.e. they don't know if they are forwarding the same payment.
+Correlation attacks are especially problematic if the first and last intermediate nodes are colluding because they would learn source and destination of a payment.
 In addition, scriptless script multi-hop locks enable improved proof of payment and atomic multi path payments (see below).
 
 Notation
 ---
 
-- `Xij := (xi + xj)*G` is the MuSig-combined public key of users `i` and `j`. Note that `xi` and `xj` are MuSig-tweaked secret keys (not the secret keys of users `i` and `j`). See the [MuSig paper](https://eprint.iacr.org/2018/068.pdf) for more details.
-- `nonce(i,m) := ki*G` is the public nonce of user `i` for a MuSig signature on `m` (note that we don't call nonces `R` here to avoid confusion with the right lock `R`).
-- `T := t*G` is an arbitrary tweak applied to the shared nonce.
-- `psig(i,m,T) := ki + H(nonce(i,m)+nonce(j,m)+T,Xij,m)*xi` is a partial 2-of-2 MuSig from user `i` with user `j` for `m`.
-- `adaptor_sig(i,m,T) := psig(i,m,T) + t`
-- `sig(m,T) := psig(i,m,T) + adaptor_sig(j,m,T)` is the completed 2-of-2 MuSig from user `i` and `j` (public key `Xij`). It can be computed from a partial signature and an adaptor signature.
+- `Pij` is the MuSig2 aggregated public key of users `i` and `j`. See the [MuSig2 paper](https://eprint.iacr.org/2020/1261) for more details.
+- `T := t*G` for a randomly chosen `t` is called the adaptor with adaptor secret `t`.
+- `psig(i,m,T)` is a partial 2-of-2 MuSig2 signature from signer `i` for `m` and adaptor `T`. For simplicity the other signer isn't included in the notation; usually it's the node the signer has a channel with and clear from context.
+  This signature is called _partial_ because it needs to be summed with the other party's partial signature in order to become a valid Schnorr signature.
+  Additionally, one may call this a _pre_ partial signature because the adaptor secret `t` needs to be added before this verifies as a regular partial signature.
+- `sig(m,T) := psig(i,m,T) + psig(j,m,T) + t` is the complete Schnorr signature from user `i` and `j`.
 
 Protocol
 ---
@@ -28,62 +28,61 @@ Protocol
 
 In the setup phase the recipient chooses `z` at random and sends the sender `z*G`.
 The sender will set up the multi-hop locks such that a successful payment reveals `z` to her and only her.
-Knowledge of `z` can be a proof of payment which is similar in concept to payment preimages in the Lightning v1.0 (see section below for details).
+Knowledge of `z` can be a proof of payment which is similar in concept to payment preimages in Lightning (see section below for details).
 
-We picture the payment starting from the sender on the left side through intermediate hops to the recipient on the right side.
-The setup phase continues with the sender setting up a tuple `(Li,yi,Ri)` consisting of the *left lock* `Li` and *right lock* `Ri` for every hop `i` in the following way:
+We picture the payment starting from the sender on the left side through intermediate nodes to the recipient on the right side.
+The setup phase continues with the sender setting up a tuple `(Li,yi,Ri)` consisting of the *left lock* `Li` and *right lock* `Ri` for every node `i` in the following way:
 
 - Every `yi` is a scalar uniformly chosen at random.
 - The sender's own left lock `L0` is set to `z*G` which was previously received from the recipient.
-- For every lock `Ri` for hop `0<=i<n` and `Lj` for hop `j=i+1` the sender sets `Ri <- Li + yi*G` and `Lj <- Ri` (see the diagram).
+- For every lock `Ri` for node `0<=i<n` and `Lj` for node `j=i+1` the sender sets `Ri <- Li + yi*G` and `Lj <- Ri` (see the diagram).
 
 Note that in Lightning, the sender would not directly send `(Li,yi,Ri)` to the intermediate nodes: it will instead use the payment onion to carry those values without disclosing his identity to intermediate nodes.
 
-In the update phase adjacent hops add a multisig output to their off-chain transactions similar to how they would add an HTLC output in the Lightning v1.0.
-Despite significant differences between v1.0 HTLCs and the outputs used to forward payments in scripless scripts multi-hop locks we continue to call the outputs HTLCs because they have the same purpose and work similarly on the surface.
-Just like v1.0 HTLCs, scriptless script HTLCs have a time out condition such that the left hop can reclaim her coins if the payment fails.
-But otherwise scriptless script HTLCs are plain 2-of-2 MuSig outputs and the hashlock is only implicitly added to the output when a partial signature is received (see below).
+In the update phase adjacent nodes add a multisig output to their off-chain transactions similar to how they would add an HTLC output in Lightning.
+We will call this new type of scriptless script output *Point Time Locked Contract* (PTLC).
+Just like HTLCs, PTLCs have a time out condition such that the left node can reclaim her coins if the payment fails.
+But otherwise PTLCs are plain 2-of-2 MuSig2 outputs and the hashlock is only implicitly added to the output when a partial signature is received (see below).
 For demonstration purposes we assume [eltoo](https://blockstream.com/eltoo.pdf)-style channels which means that both parties have symmetric state and there's no need for revocation.
 
-If the payment does not time out, the coins in the scriptless script HTLC output shared by two adjacent hops will be spent by the right hop.
-Therefore, the left hop `i` creates a transaction `txj` that spends the HTLC and sends the coins to an output that the right hop `j` controls.
-Because the left hop is now aware of the message (i.e. the transaction digest of `txj`) it is going to sign, its public signature nonce can be sent to the right hop.
-Nonce commitments may have been exchanged earlier whenever convenient for both nodes such that the nonce commitment roundtrips are not on the critical path of the payment.
+If the payment does not time out, the coins in the scriptless script PTLC output shared by two adjacent nodes will be spent by the right node.
+Therefore, the left node `i` creates a transaction `txj` that spends the PTLC and sends the coins to an output that the right node `j` controls.
+It is assumed that the nonce exchange round required by the MuSig2 protocol happened earlier when it was more convenient for both nodes (e.g. when establishing a connection) such that this communication round is not on the critical path of the payment.
 
-Upon receiving notice of the new HTLC and the left hop's public nonce, the right hop `j` creates transaction `txj` as well, combines both nonces and partially signs `txj` as `psig(j,txj,Lj)`.
-This is similar to a regular partial signature except that its left lock `Lj` is added to the combined signature nonce.
-The left hop verifies the partial signature and sends its own partial signature for `txj` to the right hop in the following two cases:
+Upon receiving notice of the new PTLC, the right node `j` creates transaction `txj` and partial signature `psig(j,txj,Lj)` over `txj`.
+The left node verifies the partial signature and sends its own partial signature for `txj` to the right node in the following two cases:
 
-- the left hop is the sender
-- the left hop `i` received a signature `psig(i-1,txi,T-yi*G)` from the preceding hop `i-1` for the left hop's transaction `txi`. In combination with the partial signature just received from the right hop, it is guaranteed that as soon as the right hop spends the coins, the left hop can open its left lock and spend the coins with `txi` as we will see below.
+- the left node is the sender
+- the left node `i` received a signature `psig(i-1,txi,T-yi*G)` from the preceding node `i-1` for the left node's transaction `txi`. In combination with the partial signature just received from the right node, it is guaranteed that as soon as the right node spends the coins, the left node can open its left lock and spend the coins with `txi` as we will see below.
 
-Therefore the update phase starts with the leftmost pair and continues to the right.
-After receiving the partial signature from the left, the right hop can complete it as soon as it learns the secret of its left lock.
+Therefore, the update phase starts with the leftmost pair and continues to the right.
+After receiving the partial signature from the left, the right node can complete it as soon as it learns the secret of its left lock.
 In order to reduce the overall number of communication rounds the setup phase and update phase can be merged together (e.g. using the payment onion in Lightning).
 
-The settlement phase begins when the recipient receives the partial signature from its left hop.
-Because the multi-hop locks were set up by the sender such that the recipient knows the secret of her left lock, she can use it as the adaptor secret and create an adaptor signature.
-The adaptor signature is combined with the left hop's partial signature resulting in a final signature for the right hop's (the recipient's) transaction.
-At this point the right hop can broadcast the transaction to settle on-chain (in case the left hop disappears or tries to cheat).
+The settlement phase begins when the recipient receives the partial signature from its left node.
+The multi-hop locks were set up by the sender such that the receiver can add her secret to the left node's partial signature and sum the result with her own partial signature.
+The result is a final signature for the right node's (the recipient's) transaction.
+At this point the right node can broadcast the transaction to settle on-chain (in case the left node disappears or tries to cheat).
 
-In this case the left hop notices the combined signature and learns its right lock secret by subtracting the right hop's previously received partial signature and its own partial signature:
+In this case the left node notices the transaction signature and learns its right lock secret by subtracting the right node's previously received partial signature and its own partial signature:
 
 ```text
-sig(tx,T) - psig(i,tx,Ri) - psig(j,tx,Lj) = adaptor_sig(j,tx,Lj) - psig(j,tx,Lj) = yj
+sig(tx,T) - psig(i,tx,Ri) - psig(j,tx,Lj) = yj
 ```
 
-Alternatively, the right hop can send its secret `yj` directly to the left hop and request to update commitment (Lightning v1.0) or settlement (eltoo) transaction such that the HTLC is removed, the left hop's output amount is decreased by the payment amount and the right hop's output amount is increased by that amount.
-If the left hop would not follow up with an update, the right hop can still broadcast the transaction before the HTLC times out.
+Alternatively, the right node can send its secret `yj` directly to the left node and request to update commitment (LN-penalty) or settlement (eltoo) transaction such that the PTLC is removed, the left node's output amount is decreased by the payment amount and the right node's output amount is increased by that amount.
+If the left node would not follow up with an update, the right node can still broadcast the transaction before the PTLC times out.
 
-Either way, once the recipient claims the payment, the left hop learns the right lock secret, computes its left lock secret by subtracting `yi`, computes an adaptor signature, and so on until the sender learns the proof of payment `z` which completes the payment.
+Either way, once the recipient claims the payment, the left node learns the right lock secret, computes its left lock secret by subtracting `yi` and uses it to create the final Schnorr signature over her transaction.
+This happens on every node until up to the sender, who learns the proof of payment `z` which completes the payment.
 
 Proof of Payment (PoP)
 ---
 
-The main difference to Lightning v1.0 is that the proof of payment (`z`) is only obtained by the sender and not by every hop along the route.
+The main difference to HTLCs is that the proof of payment (`z`) is only obtained by the sender and not by every node along the route.
 Therefore, the proof of payment can be used to authenticate the sender to the recipient.
 It is not necessary to reveal the PoP itself but instead a signature of `z*G` can be provided.
-Due to payment decorrelation intermediate hops can not associate a payment with the PoP.
+Due to payment decorrelation intermediate nodes can not associate a payment with the PoP.
 
 Obviously, not only the sender is able prove knowledge of `z`.
 Everyone the recipient or sender choose to share `z` with can do so too which makes it unclear who actually paid.
@@ -111,34 +110,20 @@ The sender adds `q*G` to the recipient's payment point on every path, who is the
 However, when setting up each path `i` the sender sends `qi` along to the recipient.
 As soon as all paths are established, the recipient can compute `q` and claim the payments.
 
-Batched updates
----
-
-In the description of the multi-hop locks flow above we assumed that adding an HTLC output is immediately followed by a signature from the right hop.
-However, [BOLT #2](https://github.com/lightningnetwork/lightning-rfc/blob/206084c9399abcfacdc95800acc27ebc5ca40b0c/02-peer-protocol.md#normal-operation) specifies that multiple updates (from both sides) can occur before a signature is exchanged.
-MuSig-based multi-hop locks can handle this similarly:
-
-- Each update is accompanied by a public nonce to create a signature of the transaction including the update.
-- Either left or right hop can conclude the batching phase by replying to the latest update with their public nonce and a partial signature.
-
-An adversary may not choose the latest update to reply to but instead selects a different `(public nonce, transaction)`-pair from the victim's updates.
-This is not vulnerable to an attack similar to the [late message Wagner's attack](https://medium.com/blockstream/insecure-shortcuts-in-musig-2ad0d38a97da) because the adversary should not be able to trick the victim into signing a transaction with a different nonce.
-Instead, the victim's nonce is tied to a specific transaction which prevents the attacker from choosing a message for signing after seeing the victim's nonce.
-
 Cancellable payments
 ---
 
-In Lightning v1.0, payments may be stuck for a very long time if an intermediate node goes offline while it was forwarding the payment.
-The payer cannot safely retry, because if the intermediate node goes back online before the HTLC times out, the payer may pay twice.
+In the current version of Lightning, payments may be stuck for a very long time if an intermediate node goes offline while it was forwarding the payment.
+The payer cannot safely retry, because if the intermediate node goes back online before the PTLC times out, the payer may pay twice.
 
 Example scenario:
 
-1. Alice sends a 10mBTC HTLC to Bob, who should forward to Dave (Alice -> Bob -> Dave).
-2. Bob receives the HTLC but does not forward anything to Dave.
+1. Alice sends a 10mBTC PTLC to Bob, who should forward to Dave (Alice -> Bob -> Dave).
+2. Bob receives the PTLC but does not forward anything to Dave.
 3. After a few blocks, Alice gets impatient and retries the payment via Carol instead of Bob (Alice -> Carol -> Dave).
 4. This payment succeeds: Alice has correctly paid 10mBTC to Dave and receives a proof-of-payment.
-5. However, Bob wakes up before his HTLC-timeout and forwards the first 10mBTC to Dave.
-6. It's free money for Dave, so Dave accepts it and the HTLC correctly fulfills.
+5. However, Bob wakes up before his PTLC-timeout and forwards the first 10mBTC to Dave.
+6. It's free money for Dave, so Dave accepts it and the PTLC correctly fulfills.
 7. Alice has received her proof-of-payment, but she paid 20mBTC instead of 10mBTC.
 
 This can be avoided if the payment needs a secret from the sender to be fulfilled.
@@ -146,9 +131,9 @@ This solution was originally introduced as [stuckless payments](https://lists.li
 
 The sender secret is `y0+y1+y2`. Alice MUST NOT send it to Dave during the setup phase.
 Alice does send `(z+y0+y1+y2)*G` to Dave as his left lock, which lets Dave discover `(y0+y1+y2)*G`.
-At the end of the update phase, Dave cannot create the adaptor signature because he is missing `y0+y1+y2`.
-Dave can request `y0+y1+y2` from Alice (and present `(y0+y1+y2)*G` to prove that he received the HTLC).
-When Alice receives that request, she knows that the HTLC was correctly forwarded all the way to Dave.
+At the end of the update phase, Dave cannot create the signature because he is missing `y0+y1+y2`.
+Dave can request `y0+y1+y2` from Alice (and present `(y0+y1+y2)*G` to prove that he received the PTLC).
+When Alice receives that request, she knows that the PTLC was correctly forwarded all the way to Dave.
 She can now safely send `y0+y1+y2` to Dave which allows the settlement phase to begin.
 
 In case Dave does not reply and the payment seems to be stuck, Alice can now retry with another secret `y0'+y1'+y2'` (and potentially another route).
@@ -164,8 +149,8 @@ However intermediate nodes have a much bigger incentive to be online and forward
 Resources
 ---
 
-* [MuSig](https://eprint.iacr.org/2018/068.pdf)
-* [Lightning Network protocol version 1.0](https://github.com/lightningnetwork/lightning-rfc)
+* [MuSig2](https://eprint.iacr.org/2020/1261)
+* [Lightning Network protocol](https://github.com/lightningnetwork/lightning-rfc)
 * [Scripless Scripts in Lightning](https://lists.launchpad.net/mimblewimble/msg00086.html)
 * [Privacy-preserving Multi-hop Locks for Blockchain Scalability and Interoperability](https://eprint.iacr.org/2018/472.pdf)
 * [Payment Decorrelation](https://medium.com/@rusty_lightning/decorrelation-of-lightning-payments-7b6579db96b0)
