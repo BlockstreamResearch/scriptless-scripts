@@ -14,3 +14,5 @@ Scriptless scripts is an approach to designing cryptographic protocol on top of 
   * Multi-hop locks are protocols that allow two parties to exchange coins and proof of payment without requiring a mutual funding multisig output (also known as "Lightning with Scriptless Scripts"). 
 * **[Non-Interactive Threshold Escrow (NITE)](md/NITE.md)**
   * NITE allows non-interactively setting up certain threshold policies on-chain, as well as off-chain if it is combined with [multi-hop locks](md/multi-hop-locks.md).
+* **[Thresh Metr MuSig](md/thresh-metr.md)**
+  * This document discusses approaches to express THRESHold spending policies with MErkle TRees and MuSig.
