@@ -69,25 +69,25 @@ The (inefficient and non-optimal) algorithm [thresh-metr.py](thresh-metr.py) giv
 
 - 3-of-5 with up to 1 signers non-cooperative
   - Parallel signing sessions: 4
-  - Everyone in key path cooperative: 1 sig, 1 pk: 96 WU
+  - Everyone in key path cooperative: 1 sig: 64 WU
   - Up to 1 non-cooperative:         1 sig, 1 pk, 2 deep: 160 WU
   - More than 1 non-cooperative:     3 sig, 5 pk, 1 deep: 384 WU
   - In Comparison, fully merkleized multisig (6 parallel sessions): 1 sig, 1 pk, 4 deep: 224 WU
 - 11-of-15 with up to 2 signers non-cooperative
   - Parallel signing sessions: 32
-  - Everyone in key path cooperative: 1 sig, 1 pk: 96 WU
+  - Everyone in key path cooperative: 1 sig: 64 WU
   - Up to 2 non-cooperative:         1 sig, 1 pk, 6 deep: 288 WU
   - More than 2 non-cooperative:     11 sig, 15 pk, 1 deep: 1216 WU
   - In Comparison, fully merkleized multisig (1001 parallel sessions): 1 sig, 1 pk, 11 deep: 448 WU
 - 15-of-20 with up to 2 signers non-cooperative
   - Parallel signing sessions: 39
-  - Everyone in key path cooperative: 1 sig, 1 pk: 96 WU
+  - Everyone in key path cooperative: 1 sig: 64 WU
   - Up to 2 non-cooperative:         1 sig, 1 pk, 7 deep: 320 WU
   - More than 2 non-cooperative:     15 sig, 20 pk, 1 deep: 1632 WU
   - In Comparison, fully merkleized multisig (11628 parallel sessions): 1 sig, 1 pk, 14 deep: 544 WU
 - 15-of-20 with up to 3 signers non-cooperative
   - Parallel signing sessions: 248
-  - Everyone in key path cooperative: 1 sig, 1 pk: 96 WU
+  - Everyone in key path cooperative: 1 sig: 64 WU
   - Up to 3 non-cooperative:         1 sig, 1 pk, 9 deep: 384 WU
   - More than 3 non-cooperative:     15 sig, 20 pk, 1 deep: 1632 WU
   - In Comparison, fully merkleized multisig (11628 parallel sessions): 1 sig, 1 pk, 14 deep: 544 WU

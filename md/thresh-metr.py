@@ -99,7 +99,7 @@ def cost(Cplen, n, t, k):
     # + 1 for for the cooperative case
     spending_paths = Cplen + 1
     print("  - Parallel signing sessions:", spending_paths)
-    print("  - Everyone in key path cooperative: 1 sig, 1 pk:", sig + pk, "WU")
+    print("  - Everyone in key path cooperative: 1 sig:", sig, "WU")
     # only balanced tree part, i.e. exclude keypath and fallback
     tree_depth = math.ceil(1+math.log(spending_paths-2, 2))
     print("  - Up to %s non-cooperative:         1 sig, 1 pk, %s deep: %s WU" % (k, tree_depth, sig + pk + tree_depth*branch))
