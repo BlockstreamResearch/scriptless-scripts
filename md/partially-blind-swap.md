@@ -15,6 +15,35 @@ computes `T = t*G` where `t` is a [blind Schnorr signature](https://blog.cryptog
 of the server over a transaction spending the funding transaction without knowing
 `t` (similar to [Discreet Log Contracts](https://adiabat.github.io/dlc.pdf)).
 
+High level description
+---
+There is Alice as a central tumbler server who has many utxos, and many users
+(Bob and Charlie) with their individual utxos. The two parties can swap coins,
+so that the user knows the coins of the tumbler, but the tumbler cannot link
+the pre to post swap coins of the users, with the anonymity set of all users
+between the time of funding and retrieval. An outside observer only sees
+regular public key and signatures and no on-chain scripts, all is "hidden"
+within these scriptless scripts public keys and signatures, so it is unclear
+that these transactions are actually a swap.
+
+   * User and tumbler communicate to generate a musig public key with the 
+     individual keys of tumbler and user, and the user asks the tumbler to 
+     fund this output O1.
+   * They generate another musig and the user funds this output O2.
+   * They pre-sign timelocked refund transactions before funding the musigs, in
+     the case either party goes offline.
+   * User has nonce commitment R and public key P of the tumbler coin O1, and 
+     with this the user can calculate the commitment s*G where s is a blinded
+     signature of the tumbler over a transaction sending coins from O1 to the user.
+     With this he can set up an adaptor signature so that the tumbler needs to
+     reveal the blinded spending signature when spending O2 (the adaptor secret).
+   * Now the user gives his contribution to spending O2, and the tumbler can
+     claim O2 only when providing his full real signature and publishing this
+     on-chain which reveals the adaptor secret (the blinded spending signature).
+   * The user can now unblind the adaptor secret spending signature (revealed
+     by the tumbler claiming O2) and he can combine this with his own signature
+     to spend O1.
+
 Protocol description
 ---
 Assume the server has a permanent public key `A = a*G`, ephemeral pubkey `A1 = A +
