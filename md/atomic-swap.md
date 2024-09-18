@@ -15,10 +15,11 @@ to B on one chain, while B is sending coins to A on the other.
 2. A gives B auxiliary data "adaptor signatures" which allow B to extract a
    discrete logarithm from a signature on one chain, and conversely to extract a
    signature from the same discrete logarithm on the other chain.
-3. B then signs to give A her coins on one chain.
-4. When A signs to take her coins, B is able to extract a discrete logarithm
+3. B validates, that knowing the discrete logarithm would actually allow him to obtain a valid signature from the adaptor signature he got from A.
+4. B then creates an adaptor signature with the adaptor A has given him before. That adaptor signature would give A her coins on one chain.
+5. A converts the adaptor signature from B to a valid signature by using her knowledge of the discrete logarithm, then A signs to take her coins, B is able to extract the discrete logarithm
    from her signature.
-5. He uses this to form a signature on the other chain, giving him A's coins.
+6. He uses this to form a signature on the other chain, giving him A's coins.
 
 We see that this executes an atomic exchange: if A signs, then both transactions
 execute; if A does not sign, then the protocol times out and neither transaction
@@ -74,13 +75,14 @@ that both blockchains support Schnorr signatures.
 2. A chooses a random `t`, sets `T = tG`, and produces adaptor signatures in place
    of her contributions to `s`. Each signature uses the same `T`. She sends these
    to B.
-3. B reveals his contribution to `s` for the signature that sends his coins to A.
-4. A reveals her contribution to `s` for that signature, completing it, and
+3. B verifies, that with the knowledge of `t`, the adaptor signature, he could actually produce a valid signature. 
+4. B creates an adaptor signature using the same `T` and reveals his contribution to `s` for the signature that sends his coins to A.
+5. A reveals her contribution to `s` for that signature, completing it, and
    publishes it to take her coins.
-5. Using the adaptor signature, B learns `t` from the output of step (4), and uses
+6. Using the adaptor signature, B learns `t` from the output of step (5), and uses
    it to compute A's contribution to `s` for the signature that sends her coins to
    him.
-6. B adds his contribution to `s`, completing the signature, and publishes it to
+7. B adds his contribution to `s`, completing the signature, and publishes it to
    take his coins.
 
 ### Compatibility
