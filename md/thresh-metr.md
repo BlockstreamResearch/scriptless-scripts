@@ -30,7 +30,7 @@ where the root is the Taproot output key and the leaf public keys are committed 
 Compared to a `CHECKSIGADD`-based solution that always requires two signatures of three public keys, the advantage of this approach is better fungibility and efficiency.
 
 We call a tree representing a t-of-n threshold policy *fully MuSig merkleized* if it purely consists of t-of-t spending conditions.
-The problem with such a tree is that the number of t-of-t conditions grows quickly (Example: n = 15, t = 11, "n choose t" = 15504).
+The problem with such a tree is that the number of t-of-t conditions grows quickly (Example: n = 15, t = 11, "n choose t" = 1365).
 As a result the Merkle proofs become large for practical purposes (Example: log_2("n choose t") = 13).
 Moreover, in order to minimize the time to obtain a signature one is required to run the MuSig protocol for all t-of-t spending conditions in parallel, which is a large number in a fully MuSig merkleized tree.
 

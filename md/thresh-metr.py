@@ -104,7 +104,7 @@ def cost(Cplen, n, t, k):
     tree_depth = math.ceil(1+math.log(spending_paths-2, 2))
     print("  - Up to %s non-cooperative:         1 sig, 1 pk, %s deep: %s WU" % (k, tree_depth, sig + pk + tree_depth*branch))
     print("  - More than %s non-cooperative:     %s sig, %s pk, 1 deep: %s WU" % (k, t, n, t*sig + n*pk + branch))
-    sessions = math.comb(n-1,t-1) # exclude combinations without the signer
+    sessions = math.comb(n-1,t-1) # exclude combinations without the signer (the signer doesn't sign combinations they're not involved in)
     tree_depth = math.ceil(math.log(math.comb(n, t), 2))
     print("  - In Comparison, fully merkleized multisig (%s parallel sessions): 1 sig, 1 pk, %s deep: %s WU" % (sessions, tree_depth, sig + pk + tree_depth*branch))
 
