@@ -91,3 +91,5 @@ The (inefficient and non-optimal) algorithm [thresh-metr.py](thresh-metr.py) giv
   - Up to 3 non-cooperative:         1 sig, 1 pk, 9 deep: 384 WU
   - More than 3 non-cooperative:     15 sig, 20 pk, 1 deep: 1632 WU
   - In Comparison, fully merkleized multisig (11628 parallel sessions): 1 sig, 1 pk, 14 deep: 544 WU
+
+A more optimal algorithm running for 60 CPU hours showed that in the "11-of-15 with up to 2 signers non-cooperative"-case 25 sessions are sufficient.
